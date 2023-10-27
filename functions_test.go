@@ -1,6 +1,7 @@
 package goccavenue_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Unaxiom/goccavenue"
@@ -37,7 +38,7 @@ func TestCCAvenueEncryption(t *testing.T) {
 		BillingEmail:   "test@domain.com",
 	}
 
-	plainText := goccavenue.CreatePayload(req)
+	plainText := goccavenue.CreateRequest(req)
 	encryptedText, err := goccavenue.EncryptPayload(req)
 	assert.Nil(err)
 	// -------------------------------------------------------------------------------------------------------------------------
@@ -48,4 +49,43 @@ func TestCCAvenueEncryption(t *testing.T) {
 	decryptedText, err := goccavenue.DecryptPayload(encryptedText)
 	assert.Nil(err)
 	assert.Equal(decryptedText, plainText)
+
+	response, err := goccavenue.CreateResponseFromEncryptedText(fmt.Sprintf("encResp=%s", encryptedText))
+	assert.Nil(err)
+	assertReqAndResp(req, response, assert)
+
+	response, err = goccavenue.CreateResponseFromEncryptedText(encryptedText)
+	assert.Nil(err)
+	assertReqAndResp(req, response, assert)
+
+	response, err = goccavenue.CreateResponseFromDecryptedText(`order_id=O7J4E6B9KUCQZO&tracking_id=312010507203&bank_ref_no=1698397618972&order_status=Success&failure_message=&payment_mode=Net Banking&card_name=AvenuesTest&status_code=null&status_message=Y&currency=INR&amount=900.87&billing_name=Entity  cbc&billing_address=Address - 3a74f5f1 8&billing_city=City - bcc&billing_state=State - cca&billing_zip=76756&billing_country=India&billing_tel=8787667676&billing_email=158bd@unaxiom.com&delivery_name=Entity  cbc&delivery_address=Address - 3a74f5f1 8&delivery_city=City - bcc&delivery_state=State - cca&delivery_zip=76756&delivery_country=India&delivery_tel=8787667676&merchant_param1=&merchant_param2=&merchant_param3=&merchant_param4=&merchant_param5=&vault=N&offer_type=null&offer_code=null&discount_value=0.0&mer_amount=900.87&eci_value=null&retry=N&response_code=0&billing_notes=&trans_date=27/10/2023 14:37:01&bin_country=`)
+	assert.Nil(err)
+	assert.Equal(response.OrderStatus, goccavenue.OrderSuccess)
+	assert.Equal(response.OrderStatus.String(), "Success")
+	assert.Equal(response.OrderId, "O7J4E6B9KUCQZO")
+	assert.Equal(response.PaymentMode, "Net Banking")
+
+	response, err = goccavenue.CreateResponseFromDecryptedText(`order_status=Failure`)
+	assert.Nil(err)
+	assert.Equal(response.OrderStatus, goccavenue.OrderFailure)
+	assert.Equal(response.OrderStatus.String(), "Failure")
+
+	response, err = goccavenue.CreateResponseFromDecryptedText(`order_status=Aborted`)
+	assert.Nil(err)
+	assert.Equal(response.OrderStatus, goccavenue.OrderAborted)
+	assert.Equal(response.OrderStatus.String(), "Aborted")
+}
+
+func assertReqAndResp(req goccavenue.CCAvenueRequest, resp goccavenue.CCAvenueResponse, assert *require.Assertions) {
+	assert.Equal(resp.OrderId, req.OrderId)
+	assert.Equal(resp.Currency, req.Currency)
+	assert.Equal(resp.Amount, req.Amount)
+	assert.Equal(resp.BillingName, req.BillingName)
+	assert.Equal(resp.BillingAddress, req.BillingAddress)
+	assert.Equal(resp.BillingCity, req.BillingCity)
+	assert.Equal(resp.BillingState, req.BillingState)
+	assert.Equal(resp.BillingZip, req.BillingZip)
+	assert.Equal(resp.BillingCountry, req.BillingCountry)
+	assert.Equal(resp.BillingTel, req.BillingTel)
+	assert.Equal(resp.BillingEmail, req.BillingEmail)
 }

@@ -35,8 +35,8 @@ func GetEncryptionKey() (encryptionKey string) {
 	return ccAvenueEncryptionKey
 }
 
-// Generates the string in a format acceptable to CCAvenue prior to encryption
-func CreatePayload(paymentReq CCAvenueRequest) string {
+// Creates the payload string in a format acceptable to CCAvenue prior to encryption
+func CreateRequest(paymentReq CCAvenueRequest) string {
 	var stringsToEncode = []string{
 		fmt.Sprintf("merchant_id=%s", escapeStr(paymentReq.MerchantId)),
 		fmt.Sprintf("order_id=%s", escapeStr(paymentReq.OrderId)),
@@ -79,6 +79,81 @@ func CreatePayload(paymentReq CCAvenueRequest) string {
 	return strings.Join(stringsToEncode, "&")
 }
 
+// Creates the response payload from the already decrypted string
+func CreateResponseFromDecryptedText(decryptedString string) (response CCAvenueResponse, err error) {
+	var resp = CCAvenueResponse{}
+	// Create a map
+	var dict = make(map[string]string)
+	listOfValues := strings.Split(decryptedString, "&")
+	for _, combined := range listOfValues {
+		split := strings.Split(combined, "=")
+		if len(split) != 2 {
+			continue
+		}
+		key := split[0]
+		value := split[1]
+		dict[key] = value
+	}
+
+	// Assign the values here
+	resp.OrderId = dict["order_id"]
+	resp.TrackingId = dict["tracking_id"]
+	resp.BankRefNo = dict["bank_ref_no"]
+	resp.OrderStatus = strToOrderStatus(dict["order_status"])
+	resp.FailureMessage = dict["failure_message"]
+	resp.PaymentMode = dict["payment_mode"]
+	resp.CardName = dict["card_name"]
+	resp.StatusCode = dict["status_code"]
+	resp.StatusMessage = dict["status_message"]
+	resp.Currency = dict["currency"]
+	resp.Amount = dict["amount"]
+	resp.BillingName = dict["billing_name"]
+	resp.BillingAddress = dict["billing_address"]
+	resp.BillingCity = dict["billing_city"]
+	resp.BillingState = dict["billing_state"]
+	resp.BillingZip = dict["billing_zip"]
+	resp.BillingCountry = dict["billing_country"]
+	resp.BillingTel = dict["billing_tel"]
+	resp.BillingEmail = dict["billing_email"]
+	resp.DeliveryName = dict["delivery_name"]
+	resp.DeliveryAddress = dict["delivery_address"]
+	resp.DeliveryCity = dict["delivery_city"]
+	resp.DeliveryState = dict["delivery_state"]
+	resp.DeliveryZip = dict["delivery_zip"]
+	resp.DeliveryCountry = dict["delivery_country"]
+	resp.DeliveryTel = dict["delivery_tel"]
+	resp.MerchantParam1 = dict["merchant_param1"]
+	resp.MerchantParam2 = dict["merchant_param2"]
+	resp.MerchantParam3 = dict["merchant_param3"]
+	resp.MerchantParam4 = dict["merchant_param4"]
+	resp.MerchantParam5 = dict["merchant_param5"]
+	resp.Vault = dict["vault"]
+	resp.OfferType = dict["offer_type"]
+	resp.OfferCode = dict["offer_code"]
+	resp.DiscountValue = dict["discount_value"]
+	resp.MerchantAmount = dict["mer_amount"]
+	resp.ECIValue = dict["eci_value"]
+	resp.Retry = dict["retry"]
+	resp.ResponseCode = dict["response_code"]
+	resp.BillingNotes = dict["billing_notes"]
+	resp.TransactionDate = dict["trans_date"]
+	resp.BinCountry = dict["bin_country"]
+
+	return resp, nil
+}
+
+// Creates the response payload from the given encrypted string from CCAvenue
+func CreateResponseFromEncryptedText(encryptedResponse string) (response CCAvenueResponse, err error) {
+	if strings.HasPrefix(encryptedResponse, "encResp=") {
+		encryptedResponse = strings.Split(encryptedResponse, "encResp=")[1]
+	}
+	decryptedString, err := DecryptPayload(encryptedResponse)
+	if err != nil {
+		return CCAvenueResponse{}, err
+	}
+	return CreateResponseFromDecryptedText(decryptedString)
+}
+
 // Pads the cipher text so that the length is a multiple of the block size (as per CCAvenue's requirement)
 func padPayload(ciphertext string) (paddedString string) {
 	padding := (ccAvenueBlockSize - len(ciphertext)%ccAvenueBlockSize)
@@ -90,7 +165,7 @@ func padPayload(ciphertext string) (paddedString string) {
 func EncryptPayload(paymentReq CCAvenueRequest) (string, error) {
 	hash := md5.Sum([]byte(GetEncryptionKey()))
 	key := hash[:]
-	plainText := padPayload(CreatePayload(paymentReq))
+	plainText := padPayload(CreateRequest(paymentReq))
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
