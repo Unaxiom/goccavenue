@@ -38,6 +38,85 @@ type CCAvenueRequest struct {
 	CustomerIdentifier string `json:"customer_identifier"`
 }
 
+// Custom type to hold the order status
+type OrderStatus int
+
+// Order Statuses
+const (
+	OrderSuccess OrderStatus = iota + 1
+	OrderFailure
+	OrderAborted
+)
+
+func (status OrderStatus) String() string {
+	return [...]string{"Success", "Failure", "Aborted"}[status-1]
+}
+
+func strToOrderStatus(str string) OrderStatus {
+	if str == "Success" {
+		return OrderSuccess
+	} else if str == "Failure" {
+		return OrderFailure
+	} else if str == "Aborted" {
+		return OrderAborted
+	}
+	return OrderFailure
+}
+
+// Stores the parameters in a CCAvenue response
+type CCAvenueResponse struct {
+	OrderId        string      `json:"order_id"`
+	TrackingId     string      `json:"tracking_id"`
+	BankRefNo      string      `json:"bank_ref_no"`
+	OrderStatus    OrderStatus `json:"order_status"`
+	FailureMessage string      `json:"failure_message"`
+	PaymentMode    string      `json:"Net Banking"`
+	CardName       string      `json:"card_name"`
+
+	StatusCode    string `json:"status_code"`
+	StatusMessage string `json:"status_message"`
+
+	Currency string `json:"currency"`
+	Amount   string `json:"amount"`
+
+	BillingName    string `json:"billing_name"`
+	BillingAddress string `json:"billing_address"`
+	BillingCity    string `json:"billing_city"`
+	BillingState   string `json:"billing_state"`
+	BillingZip     string `json:"billing_zip"`
+	BillingCountry string `json:"billing_country"`
+	BillingTel     string `json:"billing_tel"`
+	BillingEmail   string `json:"billing_email"`
+
+	DeliveryName    string `json:"delivery_name"`
+	DeliveryAddress string `json:"delivery_address"`
+	DeliveryCity    string `json:"delivery_city"`
+	DeliveryState   string `json:"delivery_state"`
+	DeliveryZip     string `json:"delivery_zip"`
+	DeliveryCountry string `json:"delivery_country"`
+	DeliveryTel     string `json:"delivery_tel"`
+
+	MerchantParam1 string `json:"merchant_param1"`
+	MerchantParam2 string `json:"merchant_param2"`
+	MerchantParam3 string `json:"merchant_param3"`
+	MerchantParam4 string `json:"merchant_param4"`
+	MerchantParam5 string `json:"merchant_param5"`
+
+	Vault     string `json:"vault"`
+	OfferType string `json:"offer_type"`
+	OfferCode string `json:"offer_code"`
+
+	DiscountValue   string `json:"discount_value"`
+	MerchantAmount  string `json:"mer_amount"`
+	ECIValue        string `json:"eci_value"`
+	Retry           string `json:"retry"`
+	ResponseCode    string `json:"response_code"`
+	BillingNotes    string `json:"billing_notes"`
+	TransactionDate string `json:"trans_date"`
+
+	BinCountry string `json:"bin_country"`
+}
+
 // Stores the Merchant ID
 var ccAvenueMerchantId = ""
 
