@@ -18,7 +18,7 @@ func TestCCAvenueEncryption(t *testing.T) {
 	assert.Equal(goccavenue.GetMerchantId(), merchantId)
 	assert.Equal(goccavenue.GetEncryptionKey(), encryptionKey)
 
-	plainText := goccavenue.CreatePayload(goccavenue.CCAvenueRequest{
+	req := goccavenue.CCAvenueRequest{
 		MerchantId:  goccavenue.GetMerchantId(),
 		OrderId:     "1234",
 		Currency:    "INR",
@@ -35,9 +35,10 @@ func TestCCAvenueEncryption(t *testing.T) {
 		BillingCountry: "India",
 		BillingTel:     "9999999999",
 		BillingEmail:   "test@domain.com",
-	})
+	}
 
-	encryptedText, err := goccavenue.EncryptPayload(plainText)
+	plainText := goccavenue.CreatePayload(req)
+	encryptedText, err := goccavenue.EncryptPayload(req)
 	assert.Nil(err)
 	// -------------------------------------------------------------------------------------------------------------------------
 	// Matching it against a known encrypted output

@@ -87,10 +87,10 @@ func padPayload(ciphertext string) (paddedString string) {
 }
 
 // Encrypts plain text string into cipher text string that is recognized by CCAvenue
-func EncryptPayload(unencrypted string) (string, error) {
+func EncryptPayload(paymentReq CCAvenueRequest) (string, error) {
 	hash := md5.Sum([]byte(GetEncryptionKey()))
 	key := hash[:]
-	plainText := padPayload(unencrypted)
+	plainText := padPayload(CreatePayload(paymentReq))
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
